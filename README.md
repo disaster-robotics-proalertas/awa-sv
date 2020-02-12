@@ -63,11 +63,7 @@ More information on how to use nmap [here](https://www.tecmint.com/nmap-command-
 $ ssh pi@<YOUR_RASPBERRY_PI_IP>
 ```
 
-9. On the raspberry, change the master/module's hostname as desired. For example, for awa1:
-
-```
-$ sudo echo "awa1" > /etc/hostname
-```
+9. On the raspberry, change the contents of /etc/hostname to reflect the master/module's hostname. 
 
 10. Reboot for the hostname change to take effect:
 
