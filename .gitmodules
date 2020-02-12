@@ -1,0 +1,24 @@
+[submodule "setup/timesyncd"]
+	path = setup/timesyncd
+	url = https://github.com/disaster-robotics-proalertas/timesyncd
+[submodule "packages/ros-asv"]
+	path = packages/ros-asv
+	url = https://github.com/disaster-robotics-proalertas/ros-asv
+[submodule "packages/atlas_ros"]
+	path = packages/atlas_ros
+	url = https://github.com/disaster-robotics-proalertas/atlas_ros
+[submodule "packages/ros_data_logger"]
+	path = packages/ros_data_logger
+	url = https://github.com/disaster-robotics-proalertas/ros_data_logger
+[submodule "packages/ros_timesync_node"]
+	path = packages/ros_timesync_node
+	url = https://github.com/disaster-robotics-proalertas/ros_timesync_node
+[submodule "packages/ros-system-monitor"]
+	path = packages/ros-system-monitor
+	url = https://github.com/disaster-robotics-proalertas/ros-system-monitor
+[submodule "packages/water_sampler_ros"]
+	path = packages/water_sampler_ros
+	url = https://github.com/disaster-robotics-proalertas/water_sampler_ros
+[submodule "packages/ros_nmea_depth"]
+	path = packages/ros_nmea_depth
+	url = https://github.com/disaster-robotics-proalertas/ros_nmea_depth
