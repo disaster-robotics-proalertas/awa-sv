@@ -36,9 +36,10 @@ if [ "$#" -lt 1 ]; then
 fi
 
 source /opt/ros/kinetic/setup.bash
-# Run only on Rasp 3
-if [ "$PROC_REV" == "a22082" ]; then
-  source /home/pi/ros_wps/devel/setup.bash
+# Run only on Rasp 3 and Jetson
+if [ "$PROC_REV" == "9000c1" ]; then
+else
+  source /home/pi/catkin_ws/devel/setup.bash
 fi
 
 SYSTEM_NAME=$HOSTNAME
