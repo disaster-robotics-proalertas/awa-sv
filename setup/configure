@@ -38,6 +38,7 @@ fi
 source /opt/ros/kinetic/setup.bash
 # Run only on Rasp 3 and Jetson
 if [ "$PROC_REV" == "9000c1" ]; then
+  continue
 else
   source /home/pi/catkin_ws/devel/setup.bash
 fi
