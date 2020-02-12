@@ -1,0 +1,101 @@
+#!/bin/bash
+
+function reset_usb {
+    VENDOR=$1
+    PRODUCT=$2
+    echo " -- Resetting USB device with $VENDOR:$PRODUCT (idVendor:idProduct)"
+    for DIR in $(find /sys/bus/usb/devices/ -maxdepth 1 -type l); do
+        if [[ -f $DIR/idVendor && -f $DIR/idProduct &&
+            $(cat $DIR/idVendor) == $VENDOR && $(cat $DIR/idProduct) == $PRODUCT ]]; then
+            echo 0 > $DIR/authorized
+            sleep 0.5
+            echo 1 > $DIR/authorized
+        fi
+    done
+}
+
+# Check for root user
+if [[ $EUID -ne 0 ]]; then
+   echo "Error: Must be run as root (or sudo)" 
+   exit 1
+fi
+
+# Get processor revision number
+# a22082 for Rasp 3
+# 9000c1 for Rasp Zero
+PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
+
+# Install systemd unit files for bringup
+echo " -- Installing systemd unit files -- "
+mkdir /etc/bringup
+cp systemd/bringup/bringup.sh /etc/bringup
+cp systemd/bringup/environment /etc/bringup
+cp systemd/bringup/bringup.service /etc/systemd/system
+
+# Install systemd unit files for sonar
+mkdir /etc/sonar
+cp systemd/sonar/startup_launch_ros_sonar.sh /etc/sonar
+cp systemd/sonar/sonar.service /etc/systemd/system
+
+# Install hosts file and modify it to reflect current hostname
+echo " -- Installing hosts file -- "
+cp hosts /etc
+sed -i "/$HOSTNAME/ s/.*/127.0.1.1\t$HOSTNAME/g" /etc/hosts
+
+# Install timesync daemon
+echo " -- Compiling and installing timesync daemon -- "
+rm /etc/systemd/system/timesyncd.service
+rm /etc/timesyncd/timesyncd.conf
+mkdir timesyncd/build
+cd timesyncd/build
+cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+make install
+cd ../..
+
+# Remove any other NTP service/script
+sudo update-rc.d ntp disable
+sudo update-rc.d chrony disable
+sudo systemctl disable systemd-timesyncd.service
+
+# Enable timesync service
+systemctl enable timesyncd.service
+
+# Run only on Rasp 3
+if [ "$PROC_REV" == "a22082" ]; then
+    # Update sources for ROS
+    echo " -- Updating ROS apt sources -- "
+    echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
+    apt update
+
+    # Install some dependency packages
+    apt install ros-kinetic-diagnostic-aggregator
+
+    # Install udev rules
+    echo " -- Installing udev rules -- "
+    cp udev/* /etc/udev/rules.d
+    udevadm control --reload-rules
+    udevadm trigger
+
+    # Reset peripheral's (e.g., LED strip arduino) USB device
+    reset_usb 1a86 7523
+fi
+
+# Install this folder to /etc
+echo " -- Installing setup files for configuration -- "
+mkdir /etc/setup
+cp -r * /etc/setup
+
+# Symbolic link to /usr/bin so we can run the scripts on regular shells
+echo " -- Creating symbolic links to install and configure scripts -- "
+sudo ln -s /etc/setup/install /usr/bin/asv_install
+echo " -- install -> asv_install --"
+sudo ln -s /etc/setup/configure /usr/bin/asv_configure
+echo " -- configure -> asv_configure --"
+
+# Install more dependencies
+apt install sysstat ifstat python-psutil sshpass
+
+# Enable bringup service
+systemctl enable bringup.service
+
+echo " -- Done installing -- "

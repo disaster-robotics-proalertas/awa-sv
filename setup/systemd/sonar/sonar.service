@@ -1,0 +1,16 @@
+[Unit]
+Description=Lowrance sonar launch service
+After=syslog.target network.target bringup.service
+Requires=bringup.service
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/bringup/environment
+ExecStartPre=/bin/sleep 15
+ExecStart=/bin/bash /etc/sonar/startup_launch_ros_sonar.sh
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

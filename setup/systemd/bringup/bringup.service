@@ -1,0 +1,14 @@
+[Unit]
+Description=ROS launch service
+After=syslog.target network.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/bringup/environment
+ExecStart=/bin/bash /etc/bringup/bringup.sh
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

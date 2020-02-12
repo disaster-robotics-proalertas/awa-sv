@@ -1,0 +1,106 @@
+#!/bin/bash
+
+MODULES=("quality1" "quality2" "quality3" "jetson1" "jetson2" "sampler" "sonar")
+
+# Get processor revision number
+# a22082 for Rasp 3
+# 9000c1 for Rasp Zero
+PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
+
+function contains {
+  local list="$1"
+  local item="$2"
+  if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]] ; then
+    # yes, list contains item
+    result=0
+  else
+    result=1
+  fi
+  return $result
+}
+
+# Check for root user
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: Must be run as root (or sudo)" 
+  exit 1
+fi
+
+# Check for arguments
+if [ "$#" -lt 1 ]; then
+  echo "Usage: ./configure <ROS master> [MODULES]"
+  echo "Modules can be:"
+  for MOD in ${MODULES[@]}; do
+      echo "    * $MOD"
+  done
+  exit 1
+fi
+
+source /opt/ros/kinetic/setup.bash
+# Run only on Rasp 3
+if [ "$PROC_REV" == "a22082" ]; then
+  source /home/pi/ros_wps/devel/setup.bash
+fi
+
+SYSTEM_NAME=$HOSTNAME
+MASTER=$1
+USER_MODULES=${@:2}
+
+# Stop and disable systemd services
+echo " -- Disabling systemd services -- "
+systemctl stop bringup.service
+systemctl stop sonar.service
+systemctl disable bringup.service
+systemctl disable sonar.service
+systemctl stop timesyncd.service
+systemctl disable timesyncd.service
+
+# Reconfigure hosts for system name
+echo " -- Updating /etc/hosts file -- "
+sed -i "/$SYSTEM_NAME/ s/.*/127.0.1.1\t$SYSTEM_NAME/g" /etc/hosts
+
+# Update environment file for bringup service
+echo " -- Updating environment file for bringup service -- "
+sed -i "/SYSTEM_NAME/ s/.*/SYSTEM_NAME=$SYSTEM_NAME/g" /etc/bringup/environment
+sed -i "/MASTER_NAME/ s/.*/MASTER_NAME=$MASTER/g" /etc/bringup/environment
+sed -i "/ROS_HOSTNAME/ s/.*/ROS_HOSTNAME=$SYSTEM_NAME/g" /etc/bringup/environment
+sed -i "/ROS_MASTER_URI/ s/.*/ROS_MASTER_URI=http:\/\/$MASTER:11311/g" /etc/bringup/environment
+
+# Update vehicle parameters file with the modules
+# Run only on Rasp 3
+if [ "$PROC_REV" == "a22082" ]; then
+  echo " -- Updating vehicle parameters with modules provided -- "
+  python /etc/setup/update_modules.py $USER_MODULES
+
+  # Configure modules' master remotely
+  echo " -- Remotely configuring modules' network variables and rebooting them -- "
+  for MOD in $USER_MODULES; do
+    sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo /bin/bash /etc/setup/configure $MASTER"
+    sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot"
+  done
+fi
+
+# Update configuration file for timesync daemon
+echo " -- Updating timesync daemon configuration -- "
+sed -i "/MASTER_HOSTNAME/ s/.*/MASTER_HOSTNAME=$MASTER/g" /etc/timesyncd/timesyncd.conf
+if [ "$PROC_REV" == "a22082" ]; then
+  sed -i "/MODE/ s/.*/MODE=server/g" /etc/timesyncd/timesyncd.conf
+else
+  sed -i "/MODE/ s/.*/MODE=client/g" /etc/timesyncd/timesyncd.conf
+fi
+
+# Reload systemd services
+echo " -- Reloading systemd services -- "
+systemctl daemon-reload
+
+# Enable and restart systemd services
+echo " -- Enabling systemd services -- "
+systemctl enable timesyncd.service
+systemctl restart timesyncd.service
+systemctl enable bringup.service
+systemctl restart bringup.service
+
+# If sonar is in the modules, enable its service
+if `contains "$MODULES" "sonar"`; then
+  systemctl enable sonar.service
+  systemctl restart sonar.service
+fi

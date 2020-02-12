@@ -1,0 +1,19 @@
+127.0.0.1       localhost
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+192.168.1.125   sonar
+192.168.1.201   boat1
+192.168.1.202   boat2
+192.168.1.203   boat3
+192.168.1.211   drone1
+192.168.1.212   drone2
+192.168.1.213   drone3
+192.168.1.231   jetson1
+192.168.1.232   jetson2
+192.168.1.235   sampler
+192.168.1.236   quality1
+192.168.1.237   quality2
+192.168.1.238   quality3
+192.168.1.200   groundstation
