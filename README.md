@@ -83,11 +83,12 @@ $ sudo reboot
 $ git clone https://github.com/disaster-robotics-proalertas/awa-sv/ $HOME/awa-sv
 ```
 
-14. Go into the repository and run:
+14. Go into the repository and run the git commands to initialize and update the submodules to the latest version:
 
 ```
 $ cd $HOME/awa-sv
 $ git submodule update --init
+$ git submodule foreach git pull origin master
 ```
 
 15. Go into the "setup" folder and run the "install" script as root:
