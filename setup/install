@@ -93,7 +93,7 @@ ln -s /etc/setup/configure /usr/bin/asv_configure
 echo " -- configure -> asv_configure --"
 
 # Install more dependencies
-apt install -y sysstat ifstat python-psutil sshpass python-catkin-tools
+apt install -y sysstat ifstat python-psutil sshpass
 
 # Install and compile catkin packages
 read -p " -- Install and compile catkin packages? [y/n, default: y] " ANS
@@ -105,7 +105,7 @@ if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk
         CATKIN_PATH=${CATKIN_PATH:-/home/pi/ros_catkin_ws}
         cp -r ../packages/* $CATKIN_PATH/src
         cd $CATKIN_PATH
-        ./src/catkin/bin/catkin_make_isolated --install --install-space /opt/ros/kinetic --pkg asv_bringup asv_description asv_control atlas_ros system_monitor ros_timesync_node water_sampler_ros ros_data_logger ros_nmea_depth
+        ./src/catkin/bin/catkin_make_isolated --install --install-space /opt/ros/kinetic --pkg asv_bringup asv_control atlas_ros system_monitor ros_timesync_node water_sampler_ros
     else
         source /opt/ros/kinetic/setup.bash
         read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/catkin_ws]: " CATKIN_PATH
