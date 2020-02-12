@@ -117,7 +117,8 @@ if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk
 fi
 
 # Update environment file with specified catkin workspace
-sed -i "/CATKIN_PATH/ s/.*/CATKIN_PATH=$CATKIN_PATH/g" /etc/bringup/environment
+sed -i '$d' /etc/bringup/environment
+echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment
 
 # Enable bringup service
 systemctl enable bringup.service
