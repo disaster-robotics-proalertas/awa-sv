@@ -6,8 +6,8 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-echo " -- Are you sure? [y/n]"
-read ANS
+read -p " -- Are you sure? [y/n, default n]" ANS
+ANS=${ANS:-n}
 if [ $(echo "$ANS" | awk '{print tolower($0)}') = "n" ] || [ $(echo "$ANS" | awk '{print tolower($0)}') = "no" ]; then
     echo " -- Aborting -- "
     exit 0
