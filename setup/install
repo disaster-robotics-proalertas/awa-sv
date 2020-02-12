@@ -23,6 +23,7 @@ fi
 # Get processor revision number
 # a22082 for Rasp 3
 # 9000c1 for Rasp Zero
+# 0000 for Jetson TK1
 PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
 
 # Install systemd unit files for bringup
@@ -53,9 +54,9 @@ make install
 cd ../..
 
 # Remove any other NTP service/script
-sudo update-rc.d ntp disable
-sudo update-rc.d chrony disable
-sudo systemctl disable systemd-timesyncd.service
+update-rc.d ntp disable
+update-rc.d chrony disable
+systemctl disable systemd-timesyncd.service
 
 # Enable timesync service
 systemctl enable timesyncd.service
@@ -68,7 +69,7 @@ if [ "$PROC_REV" == "a22082" ]; then
     apt update
 
     # Install some dependency packages
-    apt install ros-kinetic-diagnostic-aggregator
+    apt install -y ros-kinetic-diagnostic-aggregator
 
     # Install udev rules
     echo " -- Installing udev rules -- "
@@ -87,13 +88,30 @@ cp -r * /etc/setup
 
 # Symbolic link to /usr/bin so we can run the scripts on regular shells
 echo " -- Creating symbolic links to install and configure scripts -- "
-sudo ln -s /etc/setup/install /usr/bin/asv_install
+ln -s /etc/setup/install /usr/bin/asv_install
 echo " -- install -> asv_install --"
-sudo ln -s /etc/setup/configure /usr/bin/asv_configure
+ln -s /etc/setup/configure /usr/bin/asv_configure
 echo " -- configure -> asv_configure --"
 
 # Install more dependencies
-apt install sysstat ifstat python-psutil sshpass
+apt install -y sysstat ifstat python-psutil sshpass python-catkin-tools
+
+# Install and compile catkin packages
+echo " -- Install and compile catkin packages? [y/n] "
+read ANS
+if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk '{print tolower($0)}') = "yes" ]; then
+    echo " -- Insert absolute path of catkin workspace root folder: "
+    read CATKIN_PATH
+    cp -r ../packages/* $CATKIN_PATH/src
+    source /opt/ros/kinetic/setup.bash
+    if [ "$PROC_REV" == "9000c1" ]; then
+        cd $CATKIN_PATH
+        ./src/catkin/bin/catkin_make_isolated --install --install-space /opt/ros/kinetic --pkg asv_bringup asv_description asv_control atlas_ros system_monitor ros_timesync_node water_sampler_ros ros_data_logger ros_nmea_depth
+    else
+        cd $CATKIN_PATH
+        catkin_make install
+    fi
+fi
 
 # Enable bringup service
 systemctl enable bringup.service
