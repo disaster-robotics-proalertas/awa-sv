@@ -124,6 +124,12 @@ $ ssh pi@<quality1_IP_address>
 $ sudo asv_configure awa1
 ```
 
+To change modules, log into the master and run the "asv_configure" command as above, changing the desired modules. For example, for "awa1" with the "sampler" and "jetson1" modules:
+
+```
+$ sudo asv_configure awa1 sampler jetson1
+```
+
 ## Acknowledgements
 
 * ETH Zurich Autonomous System Lab's [System monitoring tools for ROS](https://github.com/ethz-asl/ros-system-monitor) package.
