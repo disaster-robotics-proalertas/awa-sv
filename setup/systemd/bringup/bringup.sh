@@ -2,10 +2,11 @@
 
 source /opt/ros/kinetic/setup.bash
 
-# If processor is Rasp 3
+# If processor is Rasp Zero, don't source catkin workspace
 PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
-if [ "$PROC_REV" == "a22082" ]; then
-    source /home/pi/ros_wps/devel/setup.bash
+if [ "$PROC_REV" == "9000c1" ]; then
+else
+    source $CATKIN_PATH/devel/setup.bash
 fi
 
 roslaunch asv_bringup minimal.launch
