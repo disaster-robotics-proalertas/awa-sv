@@ -95,6 +95,13 @@ echo " -- configure -> asv_configure --"
 # Install more dependencies
 apt install -y sysstat ifstat python-psutil sshpass
 
+# Get default catkin path depending on hardware architecture
+if [ "$PROC_REV" == "9000c1" ]; then
+    CATKIN_PATH=/home/pi/ros_catkin_ws
+else
+    CATKIN_PATH=/home/pi/catkin_ws
+fi
+
 # Install and compile catkin packages
 read -p " -- Install and compile catkin packages? [y/n, default: y] " ANS
 ANS=${ANS:-y}
