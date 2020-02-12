@@ -23,7 +23,6 @@ fi
 # Get processor revision number
 # a22082 for Rasp 3
 # 9000c1 for Rasp Zero
-# 0000 for Jetson TK1
 PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
 
 # Install systemd unit files for bringup
