@@ -68,7 +68,7 @@ if [ "$PROC_REV" == "a22082" ]; then
     apt update
 
     # Install some dependency packages
-    apt install -y ros-kinetic-diagnostic-aggregator
+    apt install -y ros-kinetic-diagnostic-aggregator nmap
 
     # Install udev rules
     echo " -- Installing udev rules -- "
