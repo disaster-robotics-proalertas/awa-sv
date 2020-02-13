@@ -76,8 +76,14 @@ if [ "$PROC_REV" == "a22082" ]; then
   # Configure modules' master remotely
   echo " -- Remotely configuring modules' network variables and rebooting them -- "
   for MOD in $USER_MODULES; do
-    sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo /bin/bash /etc/setup/configure $MASTER"
-    sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot"
+    if [ "$MOD" != "sonar" ]; then
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo /bin/bash /etc/setup/configure $MASTER"
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot"
+    else
+      echo " -- Enabling sonar systemd service -- "
+      systemctl enable sonar.service
+      systemctl restart sonar.service
+    fi
   done
 fi
 
@@ -95,14 +101,8 @@ echo " -- Reloading systemd services -- "
 systemctl daemon-reload
 
 # Enable and restart systemd services
-echo " -- Enabling systemd services -- "
+echo " -- Enabling timesyncd and bringup services -- "
 systemctl enable timesyncd.service
 systemctl restart timesyncd.service
 systemctl enable bringup.service
 systemctl restart bringup.service
-
-# If sonar is in the modules, enable its service
-if `contains "$MODULES" "sonar"`; then
-  systemctl enable sonar.service
-  systemctl restart sonar.service
-fi
