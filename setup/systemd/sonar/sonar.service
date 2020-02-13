@@ -5,7 +5,7 @@ Requires=bringup.service
 
 [Service]
 Type=simple
-User=root
+User=pi
 EnvironmentFile=/etc/bringup/environment
 ExecStartPre=/bin/sleep 15
 ExecStart=/bin/bash /etc/sonar/startup_launch_ros_sonar.sh
