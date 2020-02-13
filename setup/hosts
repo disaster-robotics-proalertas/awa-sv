@@ -3,7 +3,6 @@
 ff02::1         ip6-allnodes
 ff02::2         ip6-allrouters
 
-192.168.1.125   sonar
 192.168.1.201   awa1
 192.168.1.202   awa2
 192.168.1.203   awa3
