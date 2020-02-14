@@ -22,3 +22,6 @@
 [submodule "packages/ros_nmea_depth"]
 	path = packages/ros_nmea_depth
 	url = https://github.com/disaster-robotics-proalertas/ros_nmea_depth
+[submodule "packages/nmea_msgs"]
+	path = packages/nmea_msgs
+	url = https://github.com/ros-drivers/nmea_msgs
