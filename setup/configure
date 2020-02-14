@@ -7,6 +7,12 @@ MODULES=("quality1" "quality2" "quality3" "jetson1" "jetson2" "sampler" "sonar")
 # 9000c1 for Rasp Zero
 PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
 
+# If on jetson, run jetson configure script
+if [ "$PROC_REV" == "0000" ]; then
+    /bin/bash configure_jetson ${@:1}
+    exit 0
+fi
+
 function contains {
   local list="$1"
   local item="$2"
