@@ -49,12 +49,12 @@ USER_MODULES=${@:2}
 
 # Stop and disable systemd services
 echo " -- Disabling systemd services -- "
-systemctl stop bringup.service
-systemctl stop sonar.service
-systemctl disable bringup.service
-systemctl disable sonar.service
-systemctl stop timesyncd.service
-systemctl disable timesyncd.service
+systemctl stop bringup.service > /dev/null 2>&1
+systemctl stop sonar.service > /dev/null 2>&1
+systemctl disable bringup.service > /dev/null 2>&1
+systemctl disable sonar.service > /dev/null 2>&1
+systemctl stop timesyncd.service > /dev/null 2>&1
+systemctl disable timesyncd.service > /dev/null 2>&1
 
 # Reconfigure hosts for system name
 echo " -- Updating /etc/hosts file -- "
@@ -77,12 +77,12 @@ if [ "$PROC_REV" == "a22082" ]; then
   echo " -- Remotely configuring modules' network variables and rebooting them -- "
   for MOD in $USER_MODULES; do
     if [ "$MOD" != "sonar" ]; then
-      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo /bin/bash /etc/setup/configure $MASTER"
-      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot"
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo /bin/bash /etc/setup/configure $MASTER" > /dev/null 2>&1
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot" > /dev/null 2>&1
     else
       echo " -- Enabling sonar systemd service -- "
-      systemctl enable sonar.service
-      systemctl restart sonar.service
+      systemctl enable sonar.service > /dev/null 2>&1
+      systemctl restart sonar.service > /dev/null 2>&1
     fi
   done
 fi
@@ -102,7 +102,7 @@ systemctl daemon-reload
 
 # Enable and restart systemd services
 echo " -- Enabling timesyncd and bringup services -- "
-systemctl enable timesyncd.service
-systemctl restart timesyncd.service
-systemctl enable bringup.service
-systemctl restart bringup.service
+systemctl enable timesyncd.service > /dev/null 2>&1
+systemctl restart timesyncd.service > /dev/null 2>&1
+systemctl enable bringup.service > /dev/null 2>&1
+systemctl restart bringup.service > /dev/null 2>&1
