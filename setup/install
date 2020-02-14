@@ -27,13 +27,13 @@ PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
 
 # Install systemd unit files for bringup
 echo " -- Installing systemd unit files -- "
-mkdir /etc/bringup
+mkdir /etc/bringup > /dev/null 2>&1
 cp systemd/bringup/bringup.sh /etc/bringup
 cp systemd/bringup/environment /etc/bringup
 cp systemd/bringup/bringup.service /etc/systemd/system
 
 # Install systemd unit files for sonar
-mkdir /etc/sonar
+mkdir /etc/sonar > /dev/null 2>&1
 cp systemd/sonar/startup_launch_ros_sonar.sh /etc/sonar
 cp systemd/sonar/sonar.service /etc/systemd/system
 
@@ -46,16 +46,16 @@ sed -i "/$HOSTNAME/ s/.*/127.0.1.1\t$HOSTNAME/g" /etc/hosts
 echo " -- Compiling and installing timesync daemon -- "
 rm /etc/systemd/system/timesyncd.service
 rm /etc/timesyncd/timesyncd.conf
-mkdir timesyncd/build
+mkdir timesyncd/build > /dev/null 2>&1
 cd timesyncd/build
-cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr .. > /dev/null 2>&1
 make install
 cd ../..
 
 # Remove any other NTP service/script
-update-rc.d ntp disable
-update-rc.d chrony disable
-systemctl disable systemd-timesyncd.service
+update-rc.d ntp disable > /dev/null 2>&1
+update-rc.d chrony disable > /dev/null 2>&1
+systemctl disable systemd-timesyncd.service > /dev/null 2>&1
 
 # Enable timesync service
 systemctl enable timesyncd.service
@@ -65,10 +65,10 @@ if [ "$PROC_REV" == "a22082" ]; then
     # Update sources for ROS
     echo " -- Updating ROS apt sources -- "
     echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
-    apt update
+    apt update > /dev/null 2>&1
 
     # Install some dependency packages
-    apt install -y ros-kinetic-diagnostic-aggregator nmap
+    apt install -y ros-kinetic-diagnostic-aggregator nmap > /dev/null 2>&1
 
     # Install udev rules
     echo " -- Installing udev rules -- "
@@ -82,18 +82,19 @@ fi
 
 # Install this folder to /etc
 echo " -- Installing setup files for configuration -- "
-mkdir /etc/setup
+mkdir /etc/setup > /dev/null 2>&1
 cp -r * /etc/setup
 
 # Symbolic link to /usr/bin so we can run the scripts on regular shells
 echo " -- Creating symbolic links to install and configure scripts -- "
-ln -s /etc/setup/install /usr/bin/asv_install
-echo " -- install -> asv_install --"
-ln -s /etc/setup/configure /usr/bin/asv_configure
-echo " -- configure -> asv_configure --"
+ln -s /etc/setup/install /usr/bin/asv_install > /dev/null 2>&1
+ln -s /etc/setup/configure /usr/bin/asv_configure > /dev/null 2>&1
+echo " -- In the future, you can run the \"asv_install\" and \"asv_configure\" -- "
+echo " -- to run the install and configure scripts from any directory in your  -- "
+echo " -- shell terminal                                                       -- "
 
 # Install more dependencies
-apt install -y sysstat ifstat python-psutil sshpass
+apt install -y sysstat ifstat python-psutil sshpass > /dev/null 2>&1
 
 # Get default catkin path depending on hardware architecture
 if [ "$PROC_REV" == "9000c1" ]; then
@@ -125,7 +126,7 @@ fi
 
 # Update environment file with specified catkin workspace
 sed -i '$d' /etc/bringup/environment
-echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment
+echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment > /dev/null 2>&1
 
 # Enable bringup service
 systemctl enable bringup.service
