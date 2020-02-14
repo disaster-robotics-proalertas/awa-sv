@@ -1,0 +1,73 @@
+#!/bin/bash
+
+MODULES=("quality1" "quality2" "quality3" "jetson1" "jetson2" "sampler" "sonar")
+
+function contains {
+  local list="$1"
+  local item="$2"
+  if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]] ; then
+    # yes, list contains item
+    result=0
+  else
+    result=1
+  fi
+  return $result
+}
+
+# Check for root user
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: Must be run as root (or sudo)" 
+  exit 1
+fi
+
+# Check for arguments
+if [ "$#" -lt 1 ]; then
+  echo "Usage: ./configure <ROS master> [MODULES]"
+  echo "Modules can be:"
+  for MOD in ${MODULES[@]}; do
+      echo "    * $MOD"
+  done
+  exit 1
+fi
+
+source /opt/ros/kinetic/setup.bash
+# Run only on Rasp 3 and Jetson
+if [ "$PROC_REV" == "9000c1" ]; then
+  :
+else
+  source /home/pi/catkin_ws/devel/setup.bash
+fi
+
+SYSTEM_NAME=$HOSTNAME
+MASTER=$1
+USER_MODULES=${@:2}
+
+# Stop and disable systemd services
+echo " -- Disabling systemd services -- "
+update-rc.d bringup stop
+update-rc.d timesyncd stop
+update-rc.d bringup disable
+update-rc.d timesyncd disable
+
+# Reconfigure hosts for system name
+echo " -- Updating /etc/hosts file -- "
+sed -i "/$SYSTEM_NAME/ s/.*/127.0.1.1\t$SYSTEM_NAME/g" /etc/hosts
+
+# Update environment file for bringup service
+echo " -- Updating environment file for bringup service -- "
+sed -i "/SYSTEM_NAME/ s/.*/SYSTEM_NAME=$SYSTEM_NAME/g" /etc/bringup/environment
+sed -i "/MASTER_NAME/ s/.*/MASTER_NAME=$MASTER/g" /etc/bringup/environment
+sed -i "/ROS_HOSTNAME/ s/.*/ROS_HOSTNAME=$SYSTEM_NAME/g" /etc/bringup/environment
+sed -i "/ROS_MASTER_URI/ s/.*/ROS_MASTER_URI=http:\/\/$MASTER:11311/g" /etc/bringup/environment
+
+# Update configuration file for timesync daemon
+echo " -- Updating timesync daemon configuration -- "
+sed -i "/MASTER_HOSTNAME/ s/.*/MASTER_HOSTNAME=$MASTER/g" /etc/timesyncd/timesyncd.conf
+sed -i "/MODE/ s/.*/MODE=client/g" /etc/timesyncd/timesyncd.conf
+
+# Enable and restart systemd services
+echo " -- Enabling timesyncd and bringup daemons -- "
+update-rc.d bringup enable
+update-rc.d timesyncd enable
+update-rc.d bringup start
+update-rc.d timesyncd start

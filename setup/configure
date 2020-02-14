@@ -77,7 +77,7 @@ if [ "$PROC_REV" == "a22082" ]; then
   echo " -- Remotely configuring modules' network variables and rebooting them -- "
   for MOD in $USER_MODULES; do
     if [ "$MOD" != "sonar" ]; then
-      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo /bin/bash /etc/setup/configure $MASTER" > /dev/null 2>&1
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo asv_configure $MASTER" > /dev/null 2>&1
       sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot" > /dev/null 2>&1
     else
       echo " -- Enabling sonar systemd service -- "

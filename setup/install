@@ -23,7 +23,14 @@ fi
 # Get processor revision number
 # a22082 for Rasp 3
 # 9000c1 for Rasp Zero
+# 0000 for Jetson TK1
 PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
+
+# If on jetson, run jetson install script
+if [ "$PROC_REV" == "0000" ]; then
+    /bin/bash install_jetson
+    exit 0
+fi
 
 # Install systemd unit files for bringup
 echo " -- Installing systemd unit files -- "

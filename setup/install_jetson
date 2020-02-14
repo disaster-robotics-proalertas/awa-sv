@@ -1,0 +1,75 @@
+#!/bin/bash
+
+# Check for root user
+if [[ $EUID -ne 0 ]]; then
+   echo "Error: Must be run as root (or sudo)" 
+   exit 1
+fi
+
+# Install systemd unit files for bringup
+echo " -- Installing upstart init scripts -- "
+cp upstart/bringup/bringup.sh /etc/bringup
+cp upstart/bringup/environment /etc/bringup
+cp upstart/bringup/bringup /etc/init.d
+
+# Install hosts file and modify it to reflect current hostname
+echo " -- Installing hosts file -- "
+cp hosts /etc
+sed -i "/$HOSTNAME/ s/.*/127.0.1.1\t$HOSTNAME/g" /etc/hosts
+
+# Install timesync daemon
+echo " -- Compiling and installing timesync daemon -- "
+rm /etc/systemd/system/timesyncd.service
+rm /etc/timesyncd/timesyncd.conf
+mkdir timesyncd/build
+cd timesyncd/build
+cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+make install
+cd ../..
+
+# Remove any other NTP service/script
+update-rc.d ntp disable
+update-rc.d chrony disable
+
+# Enable timesync service
+update-rc.d timesyncd enable
+
+# Install this folder to /etc
+echo " -- Installing setup files for configuration -- "
+mkdir /etc/setup
+cp -r * /etc/setup
+
+# Symbolic link to /usr/bin so we can run the scripts on regular shells
+echo " -- Creating symbolic links to install and configure scripts -- "
+ln -s /etc/setup/install_jetson /usr/bin/asv_install
+ln -s /etc/setup/configure_jetson /usr/bin/asv_configure
+echo " -- In the future, you can run the \"asv_install\" and \"asv_configure\" -- "
+echo " -- to run the install and configure scripts from any directory in your  -- "
+echo " -- shell terminal                                                       -- "
+
+# Install more dependencies
+apt install -y sysstat ifstat python-psutil sshpass
+
+# Get default catkin path
+CATKIN_PATH=/home/pi/catkin_ws
+
+# Install and compile catkin packages
+read -p " -- Install and compile catkin packages? [y/n, default: y] " ANS
+ANS=${ANS:-y}
+if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk '{print tolower($0)}') = "yes" ]; then
+    source /opt/ros/kinetic/setup.bash
+    read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/catkin_ws]: " CATKIN_PATH
+    CATKIN_PATH=${CATKIN_PATH:-/home/pi/catkin_ws}
+    cp -r ../packages/* $CATKIN_PATH/src
+    cd $CATKIN_PATH
+    catkin_make install
+fi
+
+# Update environment file with specified catkin workspace
+sed -i '$d' /etc/bringup/environment
+echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment
+
+# Enable bringup service
+update-rc.d bringup enable
+
+echo " -- Done installing -- "

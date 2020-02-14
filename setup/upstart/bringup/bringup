@@ -1,0 +1,34 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides: bringup
+# Required-Start:
+# Required-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: Start ros at boot time
+# Description: Enable service provided by bringup.
+### END INIT INFO
+
+case "$1" in
+'start')
+        echo -n "Starting ros."
+        source /etc/bringup/environment
+        /etc/bringup/bringup.sh &
+        ;;
+'stop')
+        echo -n "Shutting down ros."
+        killall -TERM roslaunch
+        ;;
+'restart')
+        echo -n "Restarting ros."
+        killall -TERM roslaunch
+        source /etc/bringup/environment
+        /etc/bringup/bringup.sh &
+
+        ;;
+*)
+        echo "Usage: $0 { start | stop | restart }"
+        ;;
+esac
+exit 0
