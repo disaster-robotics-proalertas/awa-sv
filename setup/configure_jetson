@@ -30,7 +30,7 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/indigo/setup.bash
 # Run only on Rasp 3 and Jetson
 if [ "$PROC_REV" == "9000c1" ]; then
   :

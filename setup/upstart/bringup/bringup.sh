@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/indigo/setup.bash
 
 # If processor is Rasp Zero, don't source catkin workspace
 PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
