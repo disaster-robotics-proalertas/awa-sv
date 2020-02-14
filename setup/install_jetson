@@ -51,15 +51,15 @@ echo " -- shell terminal                                                       -
 apt install -y sysstat ifstat python-psutil sshpass
 
 # Get default catkin path
-CATKIN_PATH=/home/pi/catkin_ws
+CATKIN_PATH=/home/ubuntu/catkin_ws
 
 # Install and compile catkin packages
 read -p " -- Install and compile catkin packages? [y/n, default: y] " ANS
 ANS=${ANS:-y}
 if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk '{print tolower($0)}') = "yes" ]; then
     source /opt/ros/indigo/setup.bash
-    read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/catkin_ws]: " CATKIN_PATH
-    CATKIN_PATH=${CATKIN_PATH:-/home/pi/catkin_ws}
+    read -p " -- Insert absolute path of catkin workspace root folder [default=/home/ubuntu/catkin_ws]: " CATKIN_PATH
+    CATKIN_PATH=${CATKIN_PATH:-/home/ubuntu/catkin_ws}
     cp -r ../packages/* $CATKIN_PATH/src
     cd $CATKIN_PATH
     catkin_make install
