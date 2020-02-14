@@ -8,6 +8,7 @@ fi
 
 # Install systemd unit files for bringup
 echo " -- Installing upstart init scripts -- "
+mkdir /etc/bringup
 cp upstart/bringup/bringup.sh /etc/bringup
 cp upstart/bringup/environment /etc/bringup
 cp upstart/bringup/bringup /etc/init.d
