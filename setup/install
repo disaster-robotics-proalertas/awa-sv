@@ -63,6 +63,7 @@ cd ../..
 update-rc.d ntp disable > /dev/null 2>&1
 update-rc.d chrony disable > /dev/null 2>&1
 systemctl disable systemd-timesyncd.service > /dev/null 2>&1
+rm -rf /etc/init.d/timesyncd > /dev/null 2>&1
 
 # Enable timesync service
 systemctl enable timesyncd.service
