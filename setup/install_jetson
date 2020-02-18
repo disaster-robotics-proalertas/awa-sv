@@ -33,6 +33,7 @@ update-rc.d ntp disable
 update-rc.d chrony disable
 
 # Enable timesync service
+update-rc.d timesyncd defaults
 update-rc.d timesyncd enable
 
 # Install this folder to /etc
@@ -71,6 +72,7 @@ sed -i '$d' /etc/bringup/environment
 echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment
 
 # Enable bringup service
+update-rc.d bringup defaults
 update-rc.d bringup enable
 
 echo " -- Done installing -- "

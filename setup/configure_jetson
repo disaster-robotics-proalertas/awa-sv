@@ -2,18 +2,6 @@
 
 MODULES=("quality1" "quality2" "quality3" "jetson1" "jetson2" "sampler" "sonar")
 
-function contains {
-  local list="$1"
-  local item="$2"
-  if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]] ; then
-    # yes, list contains item
-    result=0
-  else
-    result=1
-  fi
-  return $result
-}
-
 # Check for root user
 if [[ $EUID -ne 0 ]]; then
   echo "Error: Must be run as root (or sudo)" 
