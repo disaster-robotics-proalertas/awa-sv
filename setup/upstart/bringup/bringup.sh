@@ -1,13 +1,10 @@
 #!/bin/bash
 
+export $(grep -ri SYSTEM_NAME /etc/bringup/environment)
+export $(grep -ri ROS_MASTER_URI /etc/bringup/environment)
+export $(grep -ri ROS_HOSTNAME /etc/bringup/environment)
+export $(grep -ri CATKIN_PATH /etc/bringup/environment)
 source /opt/ros/indigo/setup.bash
-
-# If processor is Rasp Zero, don't source catkin workspace
-PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
-if [ "$PROC_REV" == "9000c1" ]; then
-    :
-else
-    source $CATKIN_PATH/devel/setup.bash
-fi
+source $CATKIN_PATH/devel/setup.bash
 
 roslaunch asv_bringup minimal.launch

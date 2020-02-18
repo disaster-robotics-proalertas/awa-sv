@@ -13,7 +13,6 @@
 case "$1" in
 'start')
         echo -n "Starting ros."
-        source /etc/bringup/environment
         /etc/bringup/bringup.sh &
         ;;
 'stop')
@@ -23,7 +22,6 @@ case "$1" in
 'restart')
         echo -n "Restarting ros."
         killall -TERM roslaunch
-        source /etc/bringup/environment
         /etc/bringup/bringup.sh &
 
         ;;
