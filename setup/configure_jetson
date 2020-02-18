@@ -31,12 +31,7 @@ if [ "$#" -lt 1 ]; then
 fi
 
 source /opt/ros/indigo/setup.bash
-# Run only on Rasp 3 and Jetson
-if [ "$PROC_REV" == "9000c1" ]; then
-  :
-else
-  source /home/pi/catkin_ws/devel/setup.bash
-fi
+source /home/ubuntu/catkin_ws/devel/setup.bash
 
 SYSTEM_NAME=$HOSTNAME
 MASTER=$1
@@ -44,8 +39,8 @@ USER_MODULES=${@:2}
 
 # Stop and disable systemd services
 echo " -- Disabling systemd services -- "
-update-rc.d bringup stop
-update-rc.d timesyncd stop
+/etc/init.d/bringup stop
+/etc/init.d/timesyncd stop
 update-rc.d bringup disable
 update-rc.d timesyncd disable
 
@@ -69,5 +64,5 @@ sed -i "/MODE/ s/.*/MODE=client/g" /etc/timesyncd/timesyncd.conf
 echo " -- Enabling timesyncd and bringup daemons -- "
 update-rc.d bringup enable
 update-rc.d timesyncd enable
-update-rc.d bringup start
-update-rc.d timesyncd start
+/etc/init.d/bringup start
+/etc/init.d/timesyncd start
