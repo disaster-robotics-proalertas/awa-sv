@@ -1,6 +1,7 @@
 #!/bin/bash
 
 export $(grep -ri SYSTEM_NAME /etc/bringup/environment)
+export $(grep -ri MASTER_NAME /etc/bringup/environment)
 export $(grep -ri ROS_MASTER_URI /etc/bringup/environment)
 export $(grep -ri ROS_HOSTNAME /etc/bringup/environment)
 export $(grep -ri CATKIN_PATH /etc/bringup/environment)
