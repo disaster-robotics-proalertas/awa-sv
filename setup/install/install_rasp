@@ -86,6 +86,10 @@ echo " -- In the future, you can run the \"asv_install\" and \"asv_configure\" -
 echo " -- to run the install and configure scripts from any directory in your  -- "
 echo " -- shell terminal                                                       -- "
 
+# Install more dependencies
+apt install -y sysstat ifstat python-psutil sshpass hostapd > /dev/null 2>&1
+systemctl stop hostapd
+
 # Set default catkin path
 CATKIN_PATH=/home/pi/catkin_ws
 

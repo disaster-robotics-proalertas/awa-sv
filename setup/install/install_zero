@@ -56,7 +56,8 @@ echo " -- to run the install and configure scripts from any directory in your  -
 echo " -- shell terminal                                                       -- "
 
 # Install more dependencies
-apt install -y sysstat ifstat python-psutil sshpass > /dev/null 2>&1
+apt install -y sysstat ifstat python-psutil sshpass hostapd > /dev/null 2>&1
+systemctl stop hostapd
 
 # Set default catkin path
 CATKIN_PATH=/home/pi/ros_catkin_ws
