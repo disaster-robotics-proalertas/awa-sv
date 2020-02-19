@@ -2,29 +2,6 @@
 
 MODULES=("quality1" "quality2" "quality3" "jetson1" "jetson2" "sampler" "sonar")
 
-# Get processor revision number
-# a22082 for Rasp 3
-# 9000c1 for Rasp Zero
-PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
-
-# If on jetson, run jetson configure script
-if [ "$PROC_REV" == "0000" ]; then
-    /bin/bash configure_jetson ${@:1}
-    exit 0
-fi
-
-function contains {
-  local list="$1"
-  local item="$2"
-  if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]] ; then
-    # yes, list contains item
-    result=0
-  else
-    result=1
-  fi
-  return $result
-}
-
 # Check for root user
 if [[ $EUID -ne 0 ]]; then
   echo "Error: Must be run as root (or sudo)" 
@@ -41,13 +18,9 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
+source /etc/bringup/environment
 source /opt/ros/kinetic/setup.bash
-# Run only on Rasp 3 and Jetson
-if [ "$PROC_REV" == "9000c1" ]; then
-  :
-else
-  source /home/pi/catkin_ws/devel/setup.bash
-fi
+source $CATKIN_PATH/devel/setup.bash
 
 SYSTEM_NAME=$HOSTNAME
 MASTER=$1
@@ -75,7 +48,7 @@ sed -i "/ROS_MASTER_URI/ s/.*/ROS_MASTER_URI=http:\/\/$MASTER:11311/g" /etc/brin
 
 # Update vehicle parameters file with the modules
 # Run only on Rasp 3
-if [ "$PROC_REV" == "a22082" ]; then
+if [ "$SYSTEM_NAME" == "$MASTER" ]; then
   echo " -- Updating vehicle parameters with modules provided -- "
   python /etc/setup/update_modules.py $USER_MODULES
 
@@ -99,7 +72,7 @@ fi
 # Update configuration file for timesync daemon
 echo " -- Updating timesync daemon configuration -- "
 sed -i "/MASTER_HOSTNAME/ s/.*/MASTER_HOSTNAME=$MASTER/g" /etc/timesyncd/timesyncd.conf
-if [ "$PROC_REV" == "a22082" ]; then
+if [ "$SYSTEM_NAME" == "$MASTER" ]; then
   sed -i "/MODE/ s/.*/MODE=server/g" /etc/timesyncd/timesyncd.conf
 else
   sed -i "/MODE/ s/.*/MODE=client/g" /etc/timesyncd/timesyncd.conf

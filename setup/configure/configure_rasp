@@ -1,0 +1,89 @@
+#!/bin/bash
+
+MODULES=("quality1" "quality2" "quality3" "jetson1" "jetson2" "sampler" "sonar")
+
+# Check for root user
+if [[ $EUID -ne 0 ]]; then
+  echo "Error: Must be run as root (or sudo)" 
+  exit 1
+fi
+
+# Check for arguments
+if [ "$#" -lt 1 ]; then
+  echo "Usage: ./configure <ROS master> [MODULES]"
+  echo "Modules can be:"
+  for MOD in ${MODULES[@]}; do
+      echo "    * $MOD"
+  done
+  exit 1
+fi
+
+source /etc/bringup/environment
+source /opt/ros/kinetic/setup.bash
+source $CATKIN_PATH/devel/setup.bash
+
+SYSTEM_NAME=$HOSTNAME
+MASTER=$1
+USER_MODULES=${@:2}
+
+# Stop and disable systemd services
+echo " -- Disabling systemd services -- "
+systemctl stop bringup.service > /dev/null 2>&1
+systemctl stop sonar.service > /dev/null 2>&1
+systemctl disable bringup.service > /dev/null 2>&1
+systemctl disable sonar.service > /dev/null 2>&1
+systemctl stop timesyncd.service > /dev/null 2>&1
+systemctl disable timesyncd.service > /dev/null 2>&1
+
+# Reconfigure hosts for system name
+echo " -- Updating /etc/hosts file -- "
+sed -i "/$SYSTEM_NAME/ s/.*/127.0.1.1\t$SYSTEM_NAME/g" /etc/hosts
+
+# Update environment file for bringup service
+echo " -- Updating environment file for bringup service -- "
+sed -i "/SYSTEM_NAME/ s/.*/SYSTEM_NAME=$SYSTEM_NAME/g" /etc/bringup/environment
+sed -i "/MASTER_NAME/ s/.*/MASTER_NAME=$MASTER/g" /etc/bringup/environment
+sed -i "/ROS_HOSTNAME/ s/.*/ROS_HOSTNAME=$SYSTEM_NAME/g" /etc/bringup/environment
+sed -i "/ROS_MASTER_URI/ s/.*/ROS_MASTER_URI=http:\/\/$MASTER:11311/g" /etc/bringup/environment
+
+# Update vehicle parameters file with the modules
+if [ "$SYSTEM_NAME" == "$MASTER" ]; then
+  echo " -- Updating vehicle parameters with modules provided -- "
+  python /etc/setup/update_modules.py $USER_MODULES
+
+  # Configure modules' master remotely
+  echo " -- Remotely configuring modules' network variables and rebooting them -- "
+  for MOD in $USER_MODULES; do
+    if [[ "$MOD" == *"jetson"* ]]; then
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no ubuntu@$MOD "echo lsa | sudo -S asv_configure $MASTER &" > /dev/null 2>&1
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no ubuntu@$MOD "echo lsa | sudo reboot" > /dev/null 2>&1
+    elif [ "$MOD" != "sonar" ]; then
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo asv_configure $MASTER" > /dev/null 2>&1
+      sshpass -p "lsa" ssh -o StrictHostKeyChecking=no pi@$MOD "sudo reboot" > /dev/null 2>&1
+    else
+      echo " -- Enabling sonar systemd service -- "
+      systemctl enable sonar.service > /dev/null 2>&1
+      systemctl restart sonar.service > /dev/null 2>&1
+    fi
+  done
+fi
+
+# Update configuration file for timesync daemon
+echo " -- Updating timesync daemon configuration -- "
+sed -i "/MASTER_HOSTNAME/ s/.*/MASTER_HOSTNAME=$MASTER/g" /etc/timesyncd/timesyncd.conf
+if [ "$SYSTEM_NAME" == "$MASTER" ]; then
+  sed -i "/MODE/ s/.*/MODE=server/g" /etc/timesyncd/timesyncd.conf
+else
+  sed -i "/MODE/ s/.*/MODE=client/g" /etc/timesyncd/timesyncd.conf
+fi
+
+# Reload systemd services
+echo " -- Reloading systemd services -- "
+systemctl daemon-reload
+
+# Enable and restart systemd services
+echo " -- Enabling timesyncd and bringup services -- "
+systemctl enable timesyncd.service > /dev/null 2>&1
+systemctl restart timesyncd.service > /dev/null 2>&1
+systemctl enable bringup.service > /dev/null 2>&1
+systemctl restart bringup.service > /dev/null 2>&1

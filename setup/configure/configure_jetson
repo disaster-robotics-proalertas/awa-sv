@@ -18,8 +18,9 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
+source /etc/bringup/environment
 source /opt/ros/indigo/setup.bash
-source /home/ubuntu/catkin_ws/devel/setup.bash
+source $CATKIN_PATH/devel/setup.bash
 
 SYSTEM_NAME=$HOSTNAME
 MASTER=$1

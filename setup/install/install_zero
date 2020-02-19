@@ -7,11 +7,16 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # Install systemd unit files for bringup
-echo " -- Installing upstart init scripts -- "
-mkdir /etc/bringup
-cp upstart/bringup/bringup.sh /etc/bringup
-cp upstart/bringup/environment /etc/bringup
-cp upstart/bringup/bringup /etc/init.d
+echo " -- Installing systemd unit files -- "
+mkdir /etc/bringup > /dev/null 2>&1
+cp systemd/bringup/bringup.sh /etc/bringup
+cp systemd/bringup/environment /etc/bringup
+cp systemd/bringup/bringup.service /etc/systemd/system
+
+# Install systemd unit files for sonar
+mkdir /etc/sonar > /dev/null 2>&1
+cp systemd/sonar/startup_launch_ros_sonar.sh /etc/sonar
+cp systemd/sonar/sonar.service /etc/systemd/system
 
 # Install hosts file and modify it to reflect current hostname
 echo " -- Installing hosts file -- "
@@ -22,57 +27,57 @@ sed -i "/$HOSTNAME/ s/.*/127.0.1.1\t$HOSTNAME/g" /etc/hosts
 echo " -- Compiling and installing timesync daemon -- "
 rm /etc/systemd/system/timesyncd.service
 rm /etc/timesyncd/timesyncd.conf
-mkdir timesyncd/build
+mkdir timesyncd/build > /dev/null 2>&1
 cd timesyncd/build
-cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+cmake -DCMAKE_INSTALL_PREFIX=/usr .. > /dev/null 2>&1
 make install
 cd ../..
 
 # Remove any other NTP service/script
-update-rc.d ntp disable
-update-rc.d chrony disable
+update-rc.d ntp disable > /dev/null 2>&1
+update-rc.d chrony disable > /dev/null 2>&1
+systemctl disable systemd-timesyncd.service > /dev/null 2>&1
+rm -rf /etc/init.d/timesyncd > /dev/null 2>&1
 
 # Enable timesync service
-update-rc.d timesyncd defaults
-update-rc.d timesyncd enable
+systemctl enable timesyncd.service
 
 # Install this folder to /etc
 echo " -- Installing setup files for configuration -- "
-mkdir /etc/setup
-cp -r * /etc/setup
+mkdir /etc/setup > /dev/null 2>&1
+cp -r ../* /etc/setup
 
 # Symbolic link to /usr/bin so we can run the scripts on regular shells
 echo " -- Creating symbolic links to install and configure scripts -- "
-ln -s /etc/setup/install_jetson /usr/bin/asv_install
-ln -s /etc/setup/configure_jetson /usr/bin/asv_configure
+ln -s /etc/setup/install/install_zero /usr/bin/asv_install > /dev/null 2>&1
+ln -s /etc/setup/install/configure_zero /usr/bin/asv_configure > /dev/null 2>&1
 echo " -- In the future, you can run the \"asv_install\" and \"asv_configure\" -- "
 echo " -- to run the install and configure scripts from any directory in your  -- "
 echo " -- shell terminal                                                       -- "
 
 # Install more dependencies
-apt install -y sysstat ifstat python-psutil sshpass
+apt install -y sysstat ifstat python-psutil sshpass > /dev/null 2>&1
 
-# Get default catkin path
-CATKIN_PATH=/home/ubuntu/catkin_ws
+# Set default catkin path
+CATKIN_PATH=/home/pi/ros_catkin_ws
 
 # Install and compile catkin packages
 read -p " -- Install and compile catkin packages? [y/n, default: y] " ANS
 ANS=${ANS:-y}
 if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk '{print tolower($0)}') = "yes" ]; then
-    source /opt/ros/indigo/setup.bash
-    read -p " -- Insert absolute path of catkin workspace root folder [default=/home/ubuntu/catkin_ws]: " CATKIN_PATH
-    CATKIN_PATH=${CATKIN_PATH:-/home/ubuntu/catkin_ws}
+    source /opt/ros/kinetic/setup.bash
+    read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/ros_catkin_ws]: " CATKIN_PATH
+    CATKIN_PATH=${CATKIN_PATH:-/home/pi/ros_catkin_ws}
     cp -r ../packages/* $CATKIN_PATH/src
     cd $CATKIN_PATH
-    catkin_make install
+    ./src/catkin/bin/catkin_make_isolated --install --install-space /opt/ros/kinetic --pkg asv_bringup asv_control atlas_ros system_monitor ros_timesync_node water_sampler_ros
 fi
 
 # Update environment file with specified catkin workspace
 sed -i '$d' /etc/bringup/environment
-echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment
+echo "CATKIN_PATH=$CATKIN_PATH" | tee -a /etc/bringup/environment > /dev/null 2>&1
 
 # Enable bringup service
-update-rc.d bringup defaults
-update-rc.d bringup enable
+systemctl enable bringup.service
 
 echo " -- Done installing -- "

@@ -1,6 +1,3 @@
-[submodule "setup/timesyncd"]
-	path = setup/timesyncd
-	url = https://github.com/disaster-robotics-proalertas/timesyncd
 [submodule "packages/ros-asv"]
 	path = packages/ros-asv
 	url = https://github.com/disaster-robotics-proalertas/ros-asv
@@ -25,3 +22,6 @@
 [submodule "packages/nmea_msgs"]
 	path = packages/nmea_msgs
 	url = https://github.com/ros-drivers/nmea_msgs
+[submodule "setup/install/timesyncd"]
+	path = setup/install/timesyncd
+	url = https://github.com/disaster-robotics-proalertas/timesyncd

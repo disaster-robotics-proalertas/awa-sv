@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check for root user
+if [[ $EUID -ne 0 ]]; then
+   echo "Error: Must be run as root (or sudo)" 
+   exit 1
+fi
+
 function reset_usb {
     VENDOR=$1
     PRODUCT=$2
@@ -13,24 +19,6 @@ function reset_usb {
         fi
     done
 }
-
-# Check for root user
-if [[ $EUID -ne 0 ]]; then
-   echo "Error: Must be run as root (or sudo)" 
-   exit 1
-fi
-
-# Get processor revision number
-# a22082 for Rasp 3
-# 9000c1 for Rasp Zero
-# 0000 for Jetson TK1
-PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
-
-# If on jetson, run jetson install script
-if [ "$PROC_REV" == "0000" ]; then
-    /bin/bash install_jetson
-    exit 0
-fi
 
 # Install systemd unit files for bringup
 echo " -- Installing systemd unit files -- "
@@ -68,68 +56,49 @@ rm -rf /etc/init.d/timesyncd > /dev/null 2>&1
 # Enable timesync service
 systemctl enable timesyncd.service
 
-# Run only on Rasp 3
-if [ "$PROC_REV" == "a22082" ]; then
-    # Update sources for ROS
-    echo " -- Updating ROS apt sources -- "
-    echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
-    apt update > /dev/null 2>&1
+# Update sources for ROS
+echo " -- Updating ROS apt sources -- "
+echo "deb http://packages.ros.org/ros/ubuntu xenial main" > /etc/apt/sources.list.d/ros-latest.list
+apt update > /dev/null 2>&1
 
-    # Install some dependency packages
-    apt install -y ros-kinetic-diagnostic-aggregator nmap > /dev/null 2>&1
+# Install some dependency packages
+apt install -y ros-kinetic-diagnostic-aggregator nmap > /dev/null 2>&1
 
-    # Install udev rules
-    echo " -- Installing udev rules -- "
-    cp udev/* /etc/udev/rules.d
-    udevadm control --reload-rules
-    udevadm trigger
+# Install udev rules
+echo " -- Installing udev rules -- "
+cp udev/* /etc/udev/rules.d
+udevadm control --reload-rules
+udevadm trigger
 
-    # Reset peripheral's (e.g., LED strip arduino) USB device
-    reset_usb 1a86 7523
-fi
+# Reset peripheral's (e.g., LED strip arduino) USB device
+reset_usb 1a86 7523
 
 # Install this folder to /etc
 echo " -- Installing setup files for configuration -- "
 mkdir /etc/setup > /dev/null 2>&1
-cp -r * /etc/setup
+cp -r ../* /etc/setup
 
 # Symbolic link to /usr/bin so we can run the scripts on regular shells
 echo " -- Creating symbolic links to install and configure scripts -- "
-ln -s /etc/setup/install /usr/bin/asv_install > /dev/null 2>&1
-ln -s /etc/setup/configure /usr/bin/asv_configure > /dev/null 2>&1
+ln -s /etc/setup/install/install_rasp /usr/bin/asv_install > /dev/null 2>&1
+ln -s /etc/setup/install/configure_rasp /usr/bin/asv_configure > /dev/null 2>&1
 echo " -- In the future, you can run the \"asv_install\" and \"asv_configure\" -- "
 echo " -- to run the install and configure scripts from any directory in your  -- "
 echo " -- shell terminal                                                       -- "
 
-# Install more dependencies
-apt install -y sysstat ifstat python-psutil sshpass > /dev/null 2>&1
-
-# Get default catkin path depending on hardware architecture
-if [ "$PROC_REV" == "9000c1" ]; then
-    CATKIN_PATH=/home/pi/ros_catkin_ws
-else
-    CATKIN_PATH=/home/pi/catkin_ws
-fi
+# Set default catkin path
+CATKIN_PATH=/home/pi/catkin_ws
 
 # Install and compile catkin packages
 read -p " -- Install and compile catkin packages? [y/n, default: y] " ANS
 ANS=${ANS:-y}
 if [ $(echo "$ANS" | awk '{print tolower($0)}') = "y" ] || [ $(echo "$ANS" | awk '{print tolower($0)}') = "yes" ]; then
-    if [ "$PROC_REV" == "9000c1" ]; then
-        source /opt/ros/kinetic/setup.bash
-        read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/ros_catkin_ws]: " CATKIN_PATH
-        CATKIN_PATH=${CATKIN_PATH:-/home/pi/ros_catkin_ws}
-        cp -r ../packages/* $CATKIN_PATH/src
-        cd $CATKIN_PATH
-        ./src/catkin/bin/catkin_make_isolated --install --install-space /opt/ros/kinetic --pkg asv_bringup asv_control atlas_ros system_monitor ros_timesync_node water_sampler_ros
-    else
-        source /opt/ros/kinetic/setup.bash
-        read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/catkin_ws]: " CATKIN_PATH
-        CATKIN_PATH=${CATKIN_PATH:-/home/pi/catkin_ws}
-        cp -r ../packages/* $CATKIN_PATH/src
-        cd $CATKIN_PATH
-        catkin_make install
-    fi
+    source /opt/ros/kinetic/setup.bash
+    read -p " -- Insert absolute path of catkin workspace root folder [default=/home/pi/catkin_ws]: " CATKIN_PATH
+    CATKIN_PATH=${CATKIN_PATH:-/home/pi/catkin_ws}
+    cp -r ../packages/* $CATKIN_PATH/src
+    cd $CATKIN_PATH
+    catkin_make install
 fi
 
 # Update environment file with specified catkin workspace
