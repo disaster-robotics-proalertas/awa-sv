@@ -13,27 +13,32 @@ if [ $(echo "$ANS" | awk '{print tolower($0)}') = "n" ] || [ $(echo "$ANS" | awk
     exit 0
 fi
 
-# Get processor revision number
-# a22082 for Rasp 3
-# 9000c1 for Rasp Zero
-# 0000 for Jetson TK1
-PROC_REV=$(cat /proc/cpuinfo | grep Revision | awk '{print $3}')
+# Get linux release
+# 14.04 for Jetson TK1
+# 16.04 for Rasp 3 and Rasp Zero
+RELEASE=$(lsb_release -a | grep Release | awk '{print $2}')
 
 # Disable systemd unit files
-systemctl disable timesyncd
-systemctl disable bringup
-systemctl disable sonar
+if [ "$RELEASE" == "14.04" ]; then
+    update-rc.d timesyncd disable
+    update-rc.d bringup disable
+else
+    systemctl disable timesyncd
+    systemctl disable bringup
+    systemctl disable sonar
+fi
 
 # Remove systemd unit files for bringup
-echo " -- Removing systemd unit files -- "
+echo " -- Removing systemd unit files and systemv init scripts -- "
 rm -rf /etc/bringup
 rm -f /etc/systemd/system/bringup.service
+rm -f /etc/init.d/bringup
 
-# Install systemd unit files for sonar
+# Remove systemd unit files for sonar
 rm -rf /etc/sonar
 rm -f /etc/systemd/system/sonar.service
 
-# Install hosts file and modify it to reflect current hostname
+# Restore hosts file
 echo " -- Restoring hosts file -- "
 sed -i '6,$d' /etc/hosts
 echo "127.0.1.1       $HOSTNAME" >> /etc/hosts
@@ -41,6 +46,7 @@ echo "127.0.1.1       $HOSTNAME" >> /etc/hosts
 # Removing timesync daemon
 echo " -- Removing timesync daemon -- "
 rm -f /etc/systemd/system/timesyncd.service
+rm -f /etc/init.d/timesyncd
 rm -rf /etc/timesyncd
 rm -f /usr/bin/timesyncd
 rm -f /usr/lib/libublox.so
@@ -48,16 +54,17 @@ rm -f /usr/lib/libublox.so
 # Enable NTP services/scripts
 update-rc.d ntp enable
 update-rc.d chrony enable
-systemctl enable systemd-timesyncd.service
-
-# Run only on Rasp 3
-if [ "$PROC_REV" == "a22082" ]; then
-    # Removing udev rules
-    echo " -- Removing udev rules -- "
-    rm -f /etc/udev/rules.d/10-peripherals.rules
-    udevadm control --reload-rules
-    udevadm trigger
+if [ "$RELEASE" == "14.04" ]; then
+    :
+else
+    systemctl enable systemd-timesyncd.service
 fi
+
+# Removing udev rules
+echo " -- Removing udev rules -- "
+rm -f /etc/udev/rules.d/10-peripherals.rules
+udevadm control --reload-rules
+udevadm trigger
 
 # Remove this folder from /etc
 echo " -- Removing setup files for configuration -- "
